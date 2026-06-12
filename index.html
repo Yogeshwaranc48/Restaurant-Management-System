@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MORTIS — Dining in the Shadow of Eternity</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=UnifrakturMaguntia&family=Creepster&family=Nosifer&display=swap" rel="stylesheet" />
+  <style id="mortis-styles">
+    :root {
+      --blood: #8B0000; --blood-bright: #CC0000; --blood-deep: #4A0000;
+      --black: #080808; --charcoal: #111111; --ash: #1A1A1A;
+      --bone: #C8B89A; --parchment: #E8D5B0; --gold: #B8860B; --gold-bright: #DAA520;
+      --mode-accent: var(--blood-bright); --mode-glow: rgba(204, 0, 0, 0.45);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "EB Garamond", Georgia, serif; background: var(--black); color: var(--parchment);
+      min-height: 100vh; overflow-x: hidden; cursor: crosshair;
+    }
+    body.mode-horror {
+      --mode-accent: var(--blood-bright); --mode-glow: rgba(204, 0, 0, 0.5);
+      background: radial-gradient(ellipse 120% 80% at 50% 20%, #2a0008 0%, var(--black) 55%);
+    }
+    body.mode-god {
+      --mode-accent: var(--gold-bright); --mode-glow: rgba(218, 165, 32, 0.55);
+      background: radial-gradient(ellipse 100% 60% at 50% 30%, #1a0a2e 0%, #0D0010 45%, #050008 100%);
+    }
+    body.mode-arcane {
+      --mode-accent: #2dd4bf; --mode-glow: rgba(45, 212, 191, 0.4);
+      background: radial-gradient(ellipse 90% 70% at 50% 40%, #001a20 0%, #000D12 60%, #000508 100%);
+    }
+    body.mode-oracle {
+      --mode-accent: var(--gold-bright); --mode-glow: rgba(218, 165, 32, 0.45);
+      background: radial-gradient(ellipse 110% 90% at 50% 30%, #0a1028 0%, #020510 50%, #000308 100%);
+    }
+    .noise-overlay {
+      position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: 0.07;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    .lightning-flash {
+      position: fixed; inset: 0; pointer-events: none; z-index: 9998; background: #fff;
+      opacity: 0; transition: opacity 0.05s;
+    }
+    .lightning-flash.on { opacity: 0.85; transition: none; }
+    #load-screen {
+      position: fixed; inset: 0; z-index: 10000; background: #000; display: flex;
+      flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.8s;
+    }
+    #load-screen.hidden { opacity: 0; pointer-events: none; }
+    #load-screen .skull { font-size: 4rem; margin-bottom: 1rem; filter: drop-shadow(0 0 20px var(--blood)); }
+    #load-screen p { font-family: Cinzel, serif; color: var(--bone); font-size: 1.2rem; animation: fadeIn 1s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    #cursor-trail-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 9997; }
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: var(--charcoal); }
+    ::-webkit-scrollbar-thumb { background: linear-gradient(var(--blood), var(--blood-deep)); border-radius: 4px; }
+    .font-logo { font-family: "UnifrakturMaguntia", cursive; }
+    .font-section { font-family: "Cinzel Decorative", serif; }
+    .font-ui { font-family: Cinzel, serif; }
+    .font-italic { font-style: italic; }
+    a { color: var(--gold-bright); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .glow-heading {
+      text-shadow: 0 0 12px var(--mode-glow), 0 0 28px var(--mode-accent);
+    }
+    .nav-bar {
+      position: sticky; top: 0; z-index: 900; display: flex; align-items: center; justify-content: space-between;
+      padding: 0.75rem 1.5rem; background: linear-gradient(180deg, rgba(8,8,8,0.98), rgba(17,17,17,0.92));
+      border-bottom: 1px solid var(--blood-deep); flex-wrap: wrap; gap: 0.5rem;
+    }
+    .nav-bar .logo-link { font-family: "UnifrakturMaguntia", cursive; font-size: 1.75rem; color: var(--parchment);
+      text-shadow: 0 0 15px var(--blood); }
+    .nav-links { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+    .nav-links a { font-family: Cinzel, serif; font-size: 0.85rem; color: var(--bone); text-transform: uppercase; letter-spacing: 0.08em; }
+    .nav-links a:hover, .nav-links a.active { color: var(--blood-bright); text-decoration: none; }
+    .btn-sound { font-family: Cinzel, serif; background: var(--ash); border: 1px solid var(--blood-deep); color: var(--bone);
+      padding: 0.4rem 0.75rem; cursor: pointer; border-radius: 2px; }
+    .btn-sound:hover { border-color: var(--blood-bright); color: var(--parchment); }
+    .btn-cart-nav { position: relative; }
+    .cart-badge { position: absolute; top: -6px; right: -6px; background: var(--blood-bright); color: #fff;
+      font-size: 0.65rem; min-width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: Cinzel, serif; }
+    .page { display: none; padding-bottom: 4rem; }
+    .page.active { display: block; }
+    .section-inner { max-width: 1200px; margin: 0 auto; padding: 2rem 1.25rem; }
+    .section-title {
+      font-family: "Cinzel Decorative", serif; font-size: clamp(1.75rem, 4vw, 2.5rem); text-align: center;
+      margin-bottom: 2rem; color: var(--parchment); position: relative;
+    }
+    .blood-drip-divider { display: block; width: 100%; max-width: 400px; height: 24px; margin: 0 auto 1rem;
+      opacity: 0.85; }
+    .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal.blood-drip-anim .blood-drip-divider { animation: dripPulse 1.2s ease; }
+    @keyframes dripPulse { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.08); } }
+    .victorian-corners { position: relative; border: 1px solid rgba(139, 0, 0, 0.5); background: var(--charcoal); }
+    .victorian-corners::before, .victorian-corners::after {
+      content: ""; position: absolute; width: 18px; height: 18px; border-color: var(--gold); pointer-events: none;
+    }
+    .victorian-corners::before { top: 6px; left: 6px; border-top: 2px solid; border-left: 2px solid; }
+    .victorian-corners::after { bottom: 6px; right: 6px; border-bottom: 2px solid; border-right: 2px solid; }
+    body.mode-god .card-hover-shimmer:hover { box-shadow: 0 0 25px rgba(218, 165, 32, 0.35), inset 0 0 40px rgba(218, 165, 32, 0.08); }
+    body.mode-arcane .card-arcane { border-color: rgba(45, 212, 191, 0.5) !important; box-shadow: 0 0 15px rgba(45, 212, 191, 0.15); }
+    body:not(.mode-horror) .mode-horror-fx { display: none; }
+  </style>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="mode-horror">
+  <div class="bg-video-wrap" aria-hidden="true">
+    <video class="bg-video" autoplay muted loop playsinline preload="auto">
+      <source src="videoplayback.mp4" type="video/mp4" />
+    </video>
+    <div class="bg-blood-mist"></div>
+    <div class="bg-vignette"></div>
+    <div class="bg-fog"></div>
+    <div class="bg-dust"></div>
+    <div class="bg-drip"></div>
+  </div>
+  <div id="load-screen" aria-hidden="true">
+    <div class="skull">💀</div>
+    <p>Enter if you dare...</p>
+  </div>
+  <div class="lightning-flash" id="lightning-flash" aria-hidden="true"></div>
+  <canvas id="cursor-trail-canvas"></canvas>
+  <div class="noise-overlay" aria-hidden="true"></div>
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" /></filter>
+    </defs>
+  </svg>
+  <nav class="nav-bar font-ui">
+    <a href="#" class="logo-link" data-nav="home">MORTIS</a>
+    <div class="nav-links">
+      <a href="#" data-nav="home">Home</a>
+      <a href="#" data-nav="shop">Shop</a>
+      <a href="#" data-nav="combos">Combos</a>
+      <a href="#" data-nav="booking">Book Table</a>
+      <a href="#" data-nav="about">About</a>
+      <a href="#" data-nav="admin-login">Admin</a>
+      <button type="button" class="btn-sound" id="btn-sound" title="Ambient sound">🔊</button>
+      <a href="#" class="btn-cart-nav" id="open-cart" data-nav="cart">Cart <span class="cart-badge" id="cart-count">0</span></a>
+    </div>
+  </nav>
+  <audio id="ambient-audio" loop preload="auto" crossorigin="anonymous">
+    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg" />
+    <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_9e8b8d4b1a.mp3?filename=horror-ambient.mp3" type="audio/mpeg" />
+  </audio>
+
+  <main>
+    <section id="page-home" class="page active">
+      <header class="hero">
+        <div class="hero-fx mode-horror-fx" id="hero-fx-horror">
+          <div class="candle-row candle-left"><span class="candle"></span><span class="candle"></span><span class="candle"></span></div>
+          <div class="candle-row candle-right"><span class="candle"></span><span class="candle"></span><span class="candle"></span></div>
+          <div class="blood-drops" aria-hidden="true"></div>
+        </div>
+        <div class="god-veins" id="god-veins" aria-hidden="true"></div>
+        <div class="lightning-bolts" id="lightning-bolts" aria-hidden="true"></div>
+        <div class="stars-field" id="stars-field" aria-hidden="true"></div>
+        <div class="rune-layer" id="rune-layer" aria-hidden="true"></div>
+        <div class="hex-overlay" id="hex-overlay" aria-hidden="true"></div>
+        <div class="oracle-stars" id="oracle-stars" aria-hidden="true"></div>
+        <div class="hero-inner">
+          <p class="eyebrow font-ui">Est. 1888 · London, England</p>
+          <h1 class="hero-title font-logo glow-heading" id="hero-title">MORTIS</h1>
+          <p class="hero-sub font-ui">Dining in the Shadow of Eternity</p>
+          <div id="oracle-bubble-wrap" class="oracle-wrap hidden">
+            <div class="oracle-box font-ui" id="oracle-speech"></div>
+          </div>
+          <p class="mode-label font-ui" id="mode-label"></p>
+          <div class="hero-cta">
+            <button type="button" class="btn btn-primary" data-nav="shop">Explore the Grimoire</button>
+            <button type="button" class="btn btn-outline" data-nav="booking">Reserve a Tomb</button>
+          </div>
+          <div class="mode-toggles font-ui">
+            <button type="button" class="mode-btn active" data-mode="horror">🩸 Horror</button>
+            <button type="button" class="mode-btn" data-mode="god">⚡ God</button>
+            <button type="button" class="mode-btn" data-mode="arcane">🔮 Arcane</button>
+            <button type="button" class="mode-btn" data-mode="oracle">🌟 Oracle</button>
+          </div>
+        </div>
+        <div class="hero-candles-bottom" aria-hidden="true">
+          <span class="candle sm"></span><span class="candle sm"></span><span class="candle sm"></span>
+          <span class="candle sm"></span><span class="candle sm"></span><span class="candle sm"></span>
+        </div>
+      </header>
+
+      <div class="section-inner reveal">
+        <h2 class="section-title glow-heading">Step Into the Darkness</h2>
+        <svg class="blood-drip-divider" viewBox="0 0 400 30" preserveAspectRatio="none" aria-hidden="true">
+          <path fill="currentColor" class="drip-color" d="M0,5 L400,5 L400,8 Q380,25 360,8 Q340,28 320,10 Q300,30 280,12 Q260,28 240,10 Q220,26 200,10 Q180,28 160,10 Q140,26 120,10 Q100,28 80,10 Q60,26 40,12 Q20,28 0,10 Z"/>
+        </svg>
+        <div class="horror-grid">
+          <article class="horror-art-card big victorian-corners card-arcane" aria-label="The Grand Crypt Dining Hall — CSS art">
+            <div class="css-art css-art-crypt">
+              <div class="crypt-moon" aria-hidden="true"></div>
+              <svg class="crypt-arch-svg" viewBox="0 0 200 120" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+                <defs><linearGradient id="archGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#2a1810"/><stop offset="100%" stop-color="#0a0605"/></linearGradient></defs>
+                <path fill="url(#archGrad)" stroke="#4a3020" stroke-width="1" d="M0,120 L0,50 Q100,-5 200,50 L200,120 Z"/>
+                <path fill="none" stroke="#1a1008" stroke-width="2" d="M20,120 L20,55 Q100,15 180,55 L180,120"/>
+              </svg>
+              <div class="crypt-drips" aria-hidden="true">
+                <span class="blood-drip d1"></span><span class="blood-drip d2"></span><span class="blood-drip d3"></span><span class="blood-drip d4"></span>
+              </div>
+              <div class="crypt-cobweb" aria-hidden="true"></div>
+              <div class="crypt-chains" aria-hidden="true"><span></span><span></span></div>
+              <div class="crypt-skull" aria-hidden="true">💀</div>
+              <div class="crypt-table" aria-hidden="true">
+                <span class="cstick c1"></span><span class="cstick c2"></span><span class="cstick c3"></span>
+              </div>
+            </div>
+            <div class="horror-cap"><span>The Grand Crypt Dining Hall</span></div>
+          </article>
+          <article class="horror-art-card victorian-corners card-arcane" aria-label="Where Shadows Feast — CSS art">
+            <div class="css-art css-art-shadows">
+              <div class="shadow-moonbeam" aria-hidden="true"></div>
+              <svg class="shadow-window" viewBox="0 0 160 200" aria-hidden="true">
+                <path fill="#0a1520" stroke="#2a3540" stroke-width="2" d="M10,10 L150,10 L150,190 L10,190 Z"/>
+                <path fill="none" stroke="#1a2530" stroke-width="3" d="M80,10 L80,190 M10,100 L150,100"/>
+                <ellipse cx="80" cy="100" rx="55" ry="75" fill="none" stroke="#1a3040" stroke-width="2"/>
+              </svg>
+              <div class="shadow-shelf" aria-hidden="true">
+                <span class="sk-mini">💀</span><span class="sk-mini">💀</span><span class="sk-mini">💀</span>
+              </div>
+              <div class="shadow-fog" aria-hidden="true"></div>
+            </div>
+            <div class="horror-cap"><span>Where Shadows Feast</span></div>
+          </article>
+          <article class="horror-art-card victorian-corners card-arcane" aria-label="Victorian Darkness Awaits — CSS art">
+            <div class="css-art css-art-cemetery">
+              <div class="cem-sky" aria-hidden="true"></div>
+              <svg class="cem-gate" viewBox="0 0 200 140" aria-hidden="true">
+                <path fill="none" stroke="#3a2a20" stroke-width="4" d="M40,140 L40,50 Q100,20 160,50 L160,140"/>
+                <path fill="none" stroke="#2a1a10" stroke-width="3" d="M100,50 L100,140"/>
+              </svg>
+              <div class="cem-trees" aria-hidden="true"><span class="tree t1"></span><span class="tree t2"></span><span class="tree t3"></span></div>
+              <div class="cem-lantern" aria-hidden="true"><span class="lantern-glow"></span></div>
+              <div class="cem-bats" aria-hidden="true"><span class="bat b1">🦇</span><span class="bat b2">🦇</span><span class="bat b3">🦇</span></div>
+              <svg class="cem-castle" viewBox="0 0 200 60" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+                <path fill="#050508" d="M0,60 L0,35 L15,35 L15,25 L30,25 L30,35 L45,30 L45,20 L60,20 L60,35 L80,28 L80,15 L95,15 L95,35 L115,22 L115,10 L130,10 L130,35 L150,25 L150,12 L165,12 L165,35 L185,30 L185,18 L200,18 L200,60 Z"/>
+              </svg>
+            </div>
+            <div class="horror-cap"><span>Victorian Darkness Awaits</span></div>
+          </article>
+        </div>
+      </div>
+
+      <div class="section-inner reveal">
+        <h2 class="section-title glow-heading">Witness the Macabre</h2>
+        <div class="video-row">
+          <div class="video-card victorian-corners card-hover-shimmer card-arcane" data-tilt>
+            <div class="video-inner">
+              <video poster="https://images.unsplash.com/photo-1514190051997-0f6f39ca5cde?w=400&q=60" autoplay loop muted playsinline>
+                <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
+              </video>
+              <button type="button" class="play-ghost" aria-hidden="true">▶</button>
+            </div>
+            <div class="video-meta">
+              <h3 class="font-section"><em>The Candlelit Feast</em></h3>
+              <p>Whispers beneath the wax.</p>
+            </div>
+          </div>
+          <div class="video-card victorian-corners card-hover-shimmer card-arcane" data-tilt>
+            <div class="video-inner">
+              <video poster="https://images.unsplash.com/photo-1578474846511-04ba529f0b88?w=400&q=60" autoplay loop muted playsinline>
+                <source src="https://www.w3schools.com/html/movie.mp4" type="video/mp4" />
+              </video>
+              <button type="button" class="play-ghost" aria-hidden="true">▶</button>
+            </div>
+            <div class="video-meta">
+              <h3 class="font-section"><em>Chef's Dark Ritual</em></h3>
+              <p>Steel and shadow entwined.</p>
+            </div>
+          </div>
+          <div class="video-card victorian-corners card-hover-shimmer card-arcane" data-tilt>
+            <div class="video-inner">
+              <video poster="https://images.unsplash.com/photo-1560053608-13721b18d4a7?w=400&q=60" autoplay loop muted playsinline>
+                <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
+              </video>
+              <button type="button" class="play-ghost" aria-hidden="true">▶</button>
+            </div>
+            <div class="video-meta">
+              <h3 class="font-section"><em>The Gothic Interior</em></h3>
+              <p>Stone remembers every feast.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-inner reveal">
+        <h2 class="section-title glow-heading">Our Curses</h2>
+        <div class="features-grid">
+          <div class="feature-card victorian-corners card-hover-shimmer card-arcane"><span class="fi">🕯️</span><h3 class="font-ui">Cursed Cuisine</h3><p>Recipes older than your lineage.</p></div>
+          <div class="feature-card victorian-corners card-hover-shimmer card-arcane"><span class="fi">💀</span><h3 class="font-ui">Gothic Combos</h3><p>Unholy pairings at sinful prices.</p></div>
+          <div class="feature-card victorian-corners card-hover-shimmer card-arcane"><span class="fi">⚰️</span><h3 class="font-ui">Table Séances</h3><p>Dine where spirits still linger.</p></div>
+          <div class="feature-card victorian-corners card-hover-shimmer card-arcane"><span class="fi">🦇</span><h3 class="font-ui">Dark Delivery</h3><p>Brought by riders without faces.</p></div>
+          <div class="feature-card victorian-corners card-hover-shimmer card-arcane"><span class="fi">🩸</span><h3 class="font-ui">Blood Payments</h3><p>Gold or crimson — we accept both.</p></div>
+          <div class="feature-card victorian-corners card-hover-shimmer card-arcane"><span class="fi">🌹</span><h3 class="font-ui">Since 1888</h3><p>Count Voss still watches the door.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-shop" class="page">
+      <div class="section-inner">
+        <h2 class="section-title glow-heading font-italic">Dishes from Beyond the Veil</h2>
+        <div class="filter-bar font-ui" id="shop-filters"></div>
+        <div id="shop-grid" class="shop-grid"></div>
+        <p id="shop-empty" class="empty-msg hidden">The crypt is empty. Admin must upload offerings.</p>
+      </div>
+    </section>
+
+    <section id="page-combos" class="page">
+      <div class="section-inner">
+        <h2 class="section-title glow-heading">Unholy Combo Offerings</h2>
+        <div id="combos-grid" class="combos-grid"></div>
+        <p id="combos-empty" class="empty-msg hidden">The crypt is empty. Admin must upload offerings.</p>
+      </div>
+    </section>
+
+    <section id="page-booking" class="page">
+      <div class="section-inner booking-page">
+        <h2 class="section-title glow-heading">Reserve a Tomb</h2>
+        <div class="booking-top font-ui">
+          <label>Date <input type="date" id="bk-date" /></label>
+          <label>Time
+            <select id="bk-time"></select>
+          </label>
+        </div>
+        <p class="floor-hint font-ui" id="floor-hint">Select date and time to reveal the floor.</p>
+        <div class="floor-wrap victorian-corners">
+          <svg class="floor-svg" viewBox="0 0 520 360" id="floor-svg"></svg>
+        </div>
+        <form id="booking-form" class="booking-form font-ui">
+          <input type="hidden" id="bk-table-id" />
+          <p id="bk-table-label" class="bk-selected">No table selected.</p>
+          <label>Full Name <input type="text" id="bk-name" required /></label>
+          <label>Email <input type="email" id="bk-email" required /></label>
+          <label>Phone <input type="tel" id="bk-phone" required /></label>
+          <label>Guests (1–4) <input type="number" id="bk-guests" min="1" max="4" value="2" required /></label>
+          <label>Special Requests <textarea id="bk-req" rows="3"></textarea></label>
+          <button type="submit" class="btn btn-primary">Seal the Pact</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="page-about" class="page">
+      <div class="section-inner about-grid">
+        <div class="about-text reveal">
+          <h2 class="section-title glow-heading" style="text-align:left">Our Crypt</h2>
+          <p>In the gaslit fog of 1888, Count Aldric Voss opened a dining room where candle-flame never quite reached the corners. MORTIS was not named for death alone — but for the moment when hunger and eternity shook hands across the linen.</p>
+          <p class="mt">London’s whispers became our menu. What was once forbidden became <em>chef’s recommendation</em>. The skull above the mantle is not decoration — it is a former critic, we are told.</p>
+          <ul class="about-list">
+            <li>✦ Six generations of candle wax on the floorboards</li>
+            <li>✦ Wine list curated by those who prefer shadows</li>
+            <li>✦ Reservations recommended; walk-ins may never walk out</li>
+          </ul>
+          <div class="stats font-ui">
+            <div><strong>136</strong><span>Years</span></div>
+            <div><strong>44</strong><span>Souls / Evening</span></div>
+            <div><strong>666</strong><span>Dishes Served</span></div>
+          </div>
+        </div>
+        <div class="about-visual victorian-corners reveal">
+          <div class="skull-frame">☠</div>
+          <p class="font-ui cap">Est. MDCCCLXXXVIII</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-admin-login" class="page">
+      <div class="section-inner admin-login-wrap">
+        <form id="admin-login-form" class="admin-box victorian-corners font-ui">
+          <h2 class="font-section">Admin Login</h2>
+          <p id="admin-login-err" class="err hidden">The crypt rejects you.</p>
+          <label>Username <input type="text" id="adm-user" autocomplete="username" /></label>
+          <label>Password <input type="password" id="adm-pass" autocomplete="current-password" /></label>
+          <button type="submit" class="btn btn-primary">Enter the Vault</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="page-admin" class="page">
+      <div class="section-inner admin-dash font-ui">
+        <h2 class="section-title glow-heading">Admin Dashboard</h2>
+        <button type="button" class="btn btn-outline mb" id="admin-logout">Leave Vault</button>
+        <div class="admin-tabs">
+          <button type="button" class="tab-btn active" data-tab="orders">Orders</button>
+          <button type="button" class="tab-btn" data-tab="add-food">Add Food</button>
+          <button type="button" class="tab-btn" data-tab="add-combo">Add Combo</button>
+          <button type="button" class="tab-btn" data-tab="manage-food">Manage Food</button>
+          <button type="button" class="tab-btn" data-tab="bookings">Bookings</button>
+        </div>
+        <div id="tab-orders" class="tab-panel active">
+          <div class="table-scroll"><table class="data-table"><thead><tr><th>Order ID</th><th>Name</th><th>Phone</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th></th></tr></thead><tbody id="orders-tbody"></tbody></table></div>
+        </div>
+        <div id="tab-add-food" class="tab-panel">
+          <form id="form-add-food" class="admin-form">
+            <label>Dish Name <input type="text" name="name" required /></label>
+            <label>Category
+              <select name="category"><option>Starters</option><option>Mains</option><option>Desserts</option><option>Drinks</option><option>Sides</option></select>
+            </label>
+            <label>Price ₹ <input type="number" name="price" min="0" step="1" required /></label>
+            <label>Description <textarea name="desc" rows="3"></textarea></label>
+            <label>Badge <input type="text" name="badge" placeholder="NEW / SPICY / CHEF'S PICK" /></label>
+            <label>Image <input type="file" name="image" accept="image/*" required /></label>
+            <img id="preview-food" class="thumb-preview hidden" alt="" />
+            <button type="submit" class="btn btn-primary">Bind to Menu</button>
+          </form>
+        </div>
+        <div id="tab-add-combo" class="tab-panel">
+          <form id="form-add-combo" class="admin-form">
+            <label>Combo Name <input type="text" name="name" required /></label>
+            <label>Price ₹ <input type="number" name="price" min="0" required /></label>
+            <label>Original Price ₹ <input type="number" name="original" min="0" required /></label>
+            <label>Tag <input type="text" name="tag" placeholder="BEST VALUE / POPULAR" /></label>
+            <label>Items (one per line) <textarea name="items" rows="5" required></textarea></label>
+            <label>Image <input type="file" name="image" accept="image/*" required /></label>
+            <img id="preview-combo" class="thumb-preview hidden" alt="" />
+            <button type="submit" class="btn btn-primary">Seal Combo</button>
+          </form>
+        </div>
+        <div id="tab-manage-food" class="tab-panel">
+          <div class="table-scroll"><table class="data-table"><thead><tr><th></th><th>Name</th><th>Category</th><th>Price</th><th></th></tr></thead><tbody id="manage-food-tbody"></tbody></table></div>
+        </div>
+        <div id="tab-bookings" class="tab-panel">
+          <p class="mb">Table occupancy is keyed by date + time slot.</p>
+          <div id="bookings-by-day" class="bookings-day-summary font-ui mb"></div>
+          <div class="table-scroll"><table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Date</th><th>Time</th><th>Table</th><th>Guests</th><th>Requests</th></tr></thead><tbody id="bookings-tbody"></tbody></table></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside id="cartSidebar" class="cart-sidebar" aria-hidden="true">
+    <div class="cart-head font-ui">
+      <h3>Your Offerings</h3>
+      <button type="button" id="close-cart" class="btn-close" aria-label="Close">×</button>
+    </div>
+    <div id="cart-items" class="cart-items"></div>
+    <div class="cart-foot font-ui">
+      <p>Total: <span class="gold-total" id="cart-total">₹0</span></p>
+      <button type="button" class="btn btn-primary full" id="btn-place-order">Place Dark Order</button>
+    </div>
+  </aside>
+  <div id="cart-backdrop" class="backdrop hidden"></div>
+
+  <div id="order-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-inner victorian-corners font-ui">
+      <button type="button" class="btn-close" id="close-order">×</button>
+      <h3 class="font-section">Summon the High Priest</h3>
+      <form id="order-form">
+        <label>Full Name <input type="text" id="oName" required /></label>
+        <label>Phone <input type="tel" id="oPhone" required /></label>
+        <label>Delivery Address <textarea id="oAddress" rows="3" required></textarea></label>
+        <fieldset class="pay-fieldset">
+          <legend>Payment</legend>
+          <label class="pay-card"><input type="radio" name="pay" value="online" checked /> 💳 Online</label>
+          <label class="pay-card"><input type="radio" name="pay" value="hand" /> 🤝 Hand to Hand</label>
+        </fieldset>
+        <div id="order-summary" class="order-summary"></div>
+        <p class="grand-total">Grand Total: <span id="order-grand">₹0</span></p>
+        <button type="submit" class="btn btn-primary full">Summon the High Priest</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="thankYou" class="thank-overlay hidden" role="dialog">
+    <div class="thank-inner victorian-corners">
+      <div class="thank-candle">🕯️</div>
+      <p class="font-logo thank-logo">MORTIS</p>
+      <p class="font-ui thank-title">✦ Thank You for Your Offering ✦</p>
+      <p class="thank-body">Your dark order has been received by the High Priest. He shall review your tribute and dispatch it to your dwelling once approved. The dead do not rush, but they always deliver.</p>
+      <p class="font-ui" id="thanksOrderId"></p>
+      <button type="button" class="btn btn-primary" id="thank-close">Return to the Crypt</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast font-ui hidden"></div>
+
+  <footer class="site-footer">
+    <div class="footer-grid section-inner">
+      <div>
+        <p class="font-logo footer-logo">MORTIS</p>
+        <p class="tag">Dining in the Shadow of Eternity</p>
+      </div>
+      <div>
+        <h4 class="font-ui">Visit Us</h4>
+        <p>📍 No 2 Nehru Street, Chennai</p>
+        <p>📞 2345677899</p>
+        <p>📧 mortis@gmail.com</p>
+        <p>🕯️ Tue–Sun, 6pm–Midnight</p>
+      </div>
+      <div>
+        <h4 class="font-ui">Navigate</h4>
+        <p class="footer-nav">
+          <a href="#" data-nav="home">Home</a> |
+          <a href="#" data-nav="shop">Shop</a> |
+          <a href="#" data-nav="combos">Combos</a> |
+          <a href="#" data-nav="booking">Book Table</a> |
+          <a href="#" data-nav="about">About</a> |
+          <a href="#" data-nav="admin-login">Admin</a>
+        </p>
+      </div>
+    </div>
+    <div class="map-wrap">
+      <iframe title="Map" loading="lazy" src="https://www.google.com/maps?q=No+2+Nehru+Street+Chennai&output=embed" width="100%" height="200" style="border:0"></iframe>
+    </div>
+    <div class="footer-bottom font-ui">
+      <p>© MDCCCLXXXVIII – MMXXVI · Mortis · All Souls Reserved</p>
+      <p>✦ Memento Mori ✦</p>
+      <p class="socials"><a href="#">Instagram</a> · <a href="#">Facebook</a> · <a href="#">X</a></p>
+    </div>
+  </footer>
+
+  <style id="mortis-styles-2">
+    .hero { min-height: 100vh; position: relative; display: flex; flex-direction: column; justify-content: center;
+      align-items: center; padding: 4rem 1rem 6rem; overflow: hidden; }
+    .hero-inner { position: relative; z-index: 5; text-align: center; max-width: 900px; }
+    .eyebrow { color: var(--bone); letter-spacing: 0.2em; font-size: 0.8rem; margin-bottom: 0.75rem; }
+    .hero-title { font-size: clamp(4rem, 14vw, 8rem); line-height: 1; color: var(--parchment); margin-bottom: 0.5rem; transition: color 0.5s, text-shadow 0.5s; }
+    body.mode-god .hero-title { color: #fffef0; text-shadow: 0 0 40px rgba(255, 240, 200, 0.9), 0 0 80px rgba(218, 165, 32, 0.6); animation: godPulse 3s ease-in-out infinite; }
+    @keyframes godPulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.15); } }
+    body.mode-arcane .hero-title { color: #5eead4; text-shadow: 0 0 30px rgba(94, 234, 212, 0.6); }
+    body.mode-oracle .hero-title { color: var(--parchment); text-shadow: 0 0 25px rgba(218, 165, 32, 0.5); }
+    .hero-sub { color: var(--bone); font-size: 1.15rem; letter-spacing: 0.15em; margin-bottom: 1rem; }
+    .mode-label { min-height: 1.5em; color: var(--gold); font-size: 0.85rem; font-style: italic; margin: 0.5rem 0 1.25rem; }
+    .oracle-wrap { margin: 1rem auto; max-width: 560px; }
+    .oracle-wrap.hidden { display: none; }
+    .oracle-box {
+      border: 2px solid var(--gold); padding: 1rem 1.25rem; position: relative;
+      background: rgba(0, 0, 20, 0.75); color: var(--parchment); font-style: italic; min-height: 3.5rem;
+      box-shadow: 0 0 20px rgba(184, 134, 11, 0.25);
+    }
+    .oracle-box::before, .oracle-box::after { content: "❧"; position: absolute; color: var(--gold); opacity: 0.6; font-size: 1.2rem; }
+    .oracle-box::before { top: -0.5rem; left: 0.5rem; } .oracle-box::after { bottom: -0.5rem; right: 0.5rem; }
+    #oracle-speech { transition: opacity 0.5s ease; }
+    .btn-sm { font-size: 0.65rem; padding: 0.3rem 0.55rem; }
+    .food-card .desc { font-style: italic; color: var(--bone); font-size: 0.9rem; margin: 0.35rem 0; }
+    body.mode-god .section-inner { box-shadow: 0 0 0 1px rgba(218, 165, 32, 0.25); border-radius: 2px; }
+    .bookings-day-summary { color: var(--bone); font-size: 0.88rem; line-height: 1.5; }
+    .hero-cta { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .btn { font-family: Cinzel, serif; padding: 0.65rem 1.25rem; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.8rem; transition: 0.25s; }
+    .btn-primary { background: linear-gradient(180deg, var(--blood-bright), var(--blood-deep)); color: var(--parchment); border: 1px solid #600; }
+    .btn-primary:hover { box-shadow: 0 0 20px var(--blood); }
+    .btn-outline { background: transparent; color: var(--bone); border: 1px solid var(--blood); }
+    .btn-outline:hover { border-color: var(--gold-bright); color: var(--parchment); }
+    .mode-toggles { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+    .mode-btn { background: var(--ash); color: var(--bone); border: 1px solid var(--blood-deep); padding: 0.4rem 0.65rem; font-size: 0.7rem; cursor: pointer; font-family: Cinzel, serif; }
+    .mode-btn:hover, .mode-btn.active { border-color: var(--blood-bright); color: var(--parchment); background: var(--charcoal); }
+    .candle-row { position: absolute; top: 15%; width: 60px; z-index: 2; pointer-events: none; display: flex; flex-direction: column; gap: 2rem; }
+    .candle-left { left: 3%; } .candle-right { right: 3%; }
+    .candle { width: 14px; height: 48px; background: linear-gradient(90deg, #3d2a1f, #5c4033); border-radius: 2px; position: relative; }
+    .candle::after { content: ""; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); width: 10px; height: 14px;
+      background: radial-gradient(circle at 50% 100%, #ff6, #f80 40%, transparent 70%); border-radius: 50% 50% 40% 40%; animation: flicker 0.15s infinite alternate; filter: blur(0.3px); }
+    .candle.sm { height: 36px; width: 12px; }
+    .candle.sm::after { width: 8px; height: 11px; top: -11px; }
+    @keyframes flicker { 0% { opacity: 0.85; transform: translateX(-50%) scale(1); } 100% { opacity: 1; transform: translateX(-50%) scale(1.05); } }
+    .hero-candles-bottom { position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; gap: 1.5rem; padding-bottom: 0.5rem; z-index: 3; }
+    .blood-drops { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
+    .blood-drops::before, .blood-drops::after {
+      content: ""; position: absolute; width: 6px; height: 14px; background: var(--blood-bright); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+      opacity: 0.6; animation: fall 8s linear infinite;
+    }
+    .blood-drops::before { left: 20%; animation-delay: 0s; } .blood-drops::after { left: 70%; animation-delay: 3s; height: 18px; }
+    @keyframes fall { 0% { transform: translateY(-10vh); opacity: 0; } 10% { opacity: 0.7; } 100% { transform: translateY(100vh); opacity: 0.3; } }
+    .god-veins { display: none; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+      background: repeating-linear-gradient( -45deg, transparent, transparent 40px, rgba(218, 165, 32, 0.04) 40px, rgba(218, 165, 32, 0.04) 42px ),
+      radial-gradient(ellipse at 30% 20%, rgba(138, 43, 226, 0.15), transparent 50%); }
+    body.mode-god .god-veins { display: block; }
+    .lightning-bolts { display: none; position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: hidden; }
+    body.mode-god .lightning-bolts { display: block; }
+    .lightning-bolts::before, .lightning-bolts::after {
+      content: ""; position: absolute; width: 3px; height: 40%; background: linear-gradient(180deg, transparent, #fff, transparent); opacity: 0; left: 25%; animation: bolt 4s infinite;
+    }
+    .lightning-bolts::after { left: 75%; animation-delay: 2s; }
+    @keyframes bolt { 0%, 90%, 100% { opacity: 0; } 91% { opacity: 0.8; } 92% { opacity: 0; } }
+    .stars-field { display: none; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+      background-image: radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.6), transparent),
+        radial-gradient(1px 1px at 80% 40%, rgba(255,255,255,0.5), transparent),
+        radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,0.4), transparent); background-size: 100% 100%; }
+    body.mode-god .stars-field { display: block; }
+    .rune-layer { display: none; position: absolute; inset: 0; z-index: 2; pointer-events: none; font-size: 2rem; color: rgba(94, 234, 212, 0.15); overflow: hidden; }
+    body.mode-arcane .rune-layer { display: block; }
+    .rune { position: absolute; animation: drift 25s linear infinite; }
+    @keyframes drift { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(-30vw, 20vh) rotate(360deg); } }
+    .hex-overlay { display: none; position: absolute; inset: 0; z-index: 1; opacity: 0.12; pointer-events: none;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill='none' stroke='%232dd4bf' stroke-width='1'%3E%3Cpath d='M14 0 L28 8.5 L28 24.5 L14 33 L0 24.5 L0 8.5 Z'/%3E%3C/g%3E%3C/svg%3E"); }
+    body.mode-arcane .hex-overlay { display: block; }
+    .oracle-stars { display: none; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+      background-image: radial-gradient(2px 2px at 15% 25%, #fff, transparent), radial-gradient(1px 1px at 55% 55%, #fff, transparent); background-size: 100% 100%; animation: starSpin 120s linear infinite; }
+    body.mode-oracle .oracle-stars { display: block; }
+    @keyframes starSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .twinkle { animation: tw 2s ease-in-out infinite; }
+    @keyframes tw { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+    .horror-grid { display: grid; grid-template-columns: 1.2fr 1fr; grid-template-rows: 1fr 1fr; gap: 1rem; min-height: 420px; }
+    @media (max-width: 900px) { .horror-grid { grid-template-columns: 1fr; grid-template-rows: auto; } .horror-art-card.big { grid-row: auto; } }
+    .horror-art-card { position: relative; overflow: hidden; border-radius: 2px; min-height: 200px; }
+    .horror-art-card.big { grid-row: span 2; min-height: 380px; }
+    .horror-art-card:hover { box-shadow: 0 0 28px rgba(204, 0, 0, 0.5); border-color: var(--blood-bright); }
+    .css-art { position: relative; width: 100%; height: 100%; min-height: 200px; background: #060405; }
+    .horror-art-card.big .css-art { min-height: 380px; }
+    .horror-cap { position: absolute; bottom: 0; left: 0; right: 0; z-index: 10; padding: 1rem; font-family: Cinzel, serif; font-size: 0.95rem; color: var(--parchment);
+      background: linear-gradient(0deg, rgba(0,0,0,0.92) 0%, transparent 100%); pointer-events: none; }
+    /* Art 1 — Crypt */
+    .css-art-crypt { background: radial-gradient(ellipse 80% 50% at 50% 100%, #1a0a08 0%, #050302 70%); min-height: inherit; }
+    .crypt-moon { position: absolute; top: 8%; right: 10%; width: 44px; height: 44px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #e8e0c8, #6a5a40 45%, transparent 55%);
+      box-shadow: 0 0 20px rgba(200,190,160,0.25); animation: moonWane 8s ease-in-out infinite; }
+    @keyframes moonWane { 0%, 100% { clip-path: circle(50% at 50% 50%); } 50% { clip-path: ellipse(45% 50% at 55% 50%); } }
+    .crypt-arch-svg { position: absolute; bottom: 28%; left: 0; width: 100%; height: 45%; opacity: 0.95; }
+    .crypt-drips { position: absolute; top: 12%; left: 0; right: 0; height: 40%; pointer-events: none; }
+    .blood-drip { position: absolute; width: 5px; border-radius: 0 0 50% 50%; background: linear-gradient(180deg, #8B0000, #4a0000); animation: bloodTrickle 3s ease-in-out infinite; }
+    .blood-drip.d1 { left: 22%; height: 0; animation-duration: 2.8s; }
+    .blood-drip.d2 { left: 38%; animation-duration: 3.4s; animation-delay: 0.5s; }
+    .blood-drip.d3 { left: 58%; animation-duration: 2.5s; animation-delay: 1s; }
+    .blood-drip.d4 { left: 72%; animation-duration: 3.1s; animation-delay: 0.3s; }
+    @keyframes bloodTrickle { 0%, 100% { height: 0; opacity: 0.4; } 40% { height: 45px; opacity: 1; } 70% { height: 55px; opacity: 0.85; } }
+    .crypt-cobweb { position: absolute; top: 4%; left: 4%; width: 70px; height: 70px; opacity: 0.35;
+      background: radial-gradient(circle at 0 0, transparent 40%, #889 41%, transparent 42%),
+        linear-gradient(135deg, transparent 48%, #666 49%, transparent 50%),
+        linear-gradient(45deg, transparent 48%, #666 49%, transparent 50%); }
+    .crypt-chains { position: absolute; top: 0; bottom: 35%; left: 8%; right: 8%; display: flex; justify-content: space-between; pointer-events: none; }
+    .crypt-chains span { width: 3px; background: linear-gradient(180deg, #4a4a4a, #2a2a2a); border-radius: 1px; position: relative; }
+    .crypt-chains span::before, .crypt-chains span::after { content: ""; position: absolute; left: -3px; width: 9px; height: 4px; background: #555; border-radius: 2px; }
+    .crypt-chains span::before { top: 25%; } .crypt-chains span::after { top: 55%; }
+    .crypt-skull { position: absolute; top: 18%; left: 50%; transform: translateX(-50%); font-size: 2rem; filter: drop-shadow(0 0 12px rgba(139,0,0,0.6)); animation: skullFloat 4s ease-in-out infinite; }
+    @keyframes skullFloat { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-8px); } }
+    .crypt-table { position: absolute; bottom: 22%; left: 50%; transform: translateX(-50%); width: 55%; height: 14px; background: linear-gradient(180deg, #3d2a1f, #1a1008); border-radius: 2px; box-shadow: 0 4px 12px #000; }
+    .cstick { position: absolute; bottom: 100%; width: 8px; height: 28px; margin-left: -4px; background: linear-gradient(90deg, #2a1a12, #4a3020); border-radius: 2px; }
+    .cstick::after { content: ""; position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 10px; height: 12px;
+      background: radial-gradient(circle at 50% 100%, #ffcc66, #ff6600 40%, transparent 70%); border-radius: 50% 50% 40% 40%; animation: candleFlick 0.2s infinite alternate; }
+    .cstick.c1 { left: 20%; } .cstick.c2 { left: 50%; } .cstick.c3 { left: 80%; }
+    @keyframes candleFlick { from { opacity: 0.85; transform: translateX(-50%) scale(1); } to { opacity: 1; transform: translateX(-50%) scale(1.05); } }
+    /* Art 2 — Shadows */
+    .css-art-shadows { background: linear-gradient(180deg, #0a080c 0%, #050308 100%); min-height: inherit; }
+    .shadow-moonbeam { position: absolute; inset: 0; background: linear-gradient(125deg, transparent 35%, rgba(180,190,220,0.08) 42%, transparent 50%); pointer-events: none; }
+    .shadow-window { position: absolute; top: 8%; left: 50%; transform: translateX(-50%); width: 55%; height: 62%; opacity: 0.9; filter: drop-shadow(0 0 20px rgba(100,120,180,0.15)); }
+    .shadow-shelf { position: absolute; bottom: 32%; left: 15%; right: 15%; height: 28px; background: linear-gradient(180deg, #2a1a12, #1a0a08);
+      border-radius: 2px; display: flex; align-items: center; justify-content: center; gap: 1.2rem; font-size: 0.85rem; opacity: 0.85; }
+    .shadow-fog { position: absolute; bottom: 0; left: 0; right: 0; height: 40%; pointer-events: none;
+      background: linear-gradient(0deg, rgba(20,18,28,0.95) 0%, rgba(30,25,35,0.4) 40%, transparent 100%);
+      animation: fogDrift 8s ease-in-out infinite; }
+    @keyframes fogDrift { 0%, 100% { transform: translateX(0); opacity: 0.9; } 50% { transform: translateX(-4%); opacity: 0.75; } }
+    /* Art 3 — Cemetery */
+    .css-art-cemetery { background: linear-gradient(180deg, #020510 0%, #0a0a12 45%, #0d0805 100%); min-height: inherit; }
+    .cem-sky { position: absolute; inset: 0; background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(30,40,80,0.4), transparent 60%); }
+    .cem-gate { position: absolute; bottom: 28%; left: 50%; transform: translateX(-50%); width: 70%; height: 55%; opacity: 0.9; }
+    .cem-trees { position: absolute; bottom: 22%; left: 0; right: 0; height: 45%; pointer-events: none; }
+    .cem-trees .tree { position: absolute; bottom: 0; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 70px solid #0a0806; opacity: 0.7; }
+    .cem-trees .tree::after { content: ""; position: absolute; bottom: 0; left: -12px; width: 24px; height: 20px; background: #080605; border-radius: 2px; }
+    .cem-trees .t1 { left: 8%; } .cem-trees .t2 { left: 50%; transform: translateX(-50%); border-bottom-width: 90px; } .cem-trees .t3 { right: 8%; left: auto; }
+    .cem-lantern { position: absolute; top: 28%; left: 22%; width: 18px; height: 26px; background: radial-gradient(ellipse, #3a2a15, #1a1008); border-radius: 4px;
+      border: 1px solid #5a4a30; animation: lanternSway 4s ease-in-out infinite; transform-origin: top center; }
+    .cem-lantern::before { content: ""; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); width: 2px; height: 14px; background: #444; }
+    .lantern-glow { position: absolute; inset: -20px; background: radial-gradient(circle, rgba(255,180,60,0.25), transparent 70%); animation: lanternPulse 2s ease-in-out infinite; }
+    @keyframes lanternSway { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+    @keyframes lanternPulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+    .cem-bats { position: absolute; top: 15%; left: 0; right: 0; height: 30%; pointer-events: none; }
+    .cem-bats .bat { position: absolute; font-size: 1.1rem; opacity: 0.65; animation: batFly 6s linear infinite; }
+    .cem-bats .b1 { left: 15%; animation-delay: 0s; } .cem-bats .b2 { left: 50%; animation-delay: 2s; font-size: 0.9rem; } .cem-bats .b3 { left: 75%; animation-delay: 4s; }
+    @keyframes batFly { 0% { transform: translate(0, 0) scaleX(1); } 25% { transform: translate(30px, 15px) scaleX(-1); } 50% { transform: translate(10px, -5px) scaleX(1); } 100% { transform: translate(-20px, 20px) scaleX(-1); } }
+    .cem-castle { position: absolute; bottom: 0; left: 0; width: 100%; height: 28%; opacity: 0.95; }
+    .food-card-3d { perspective: 900px; transform-style: preserve-3d; }
+    .food-3d-inner { position: relative; transition: transform 0.15s ease-out; transform-style: preserve-3d; border-radius: 2px; overflow: hidden; }
+    .food-card-3d { border: 1px solid rgba(139, 0, 0, 0.45); background: var(--charcoal); }
+    .food-shimmer { position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: 0; transition: opacity 0.3s;
+      background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.12) 50%, transparent 60%); background-size: 200% 100%; }
+    .food-card-3d:hover .food-shimmer { opacity: 1; animation: foodShimmer 1.2s ease-out; }
+    @keyframes foodShimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+    .skull-dramatic { position: absolute; top: 10px; right: 10px; z-index: 6; font-size: 2rem; line-height: 1;
+      opacity: 0; transform: scale(0) rotate(-120deg); transition: opacity 0.25s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .food-card-3d:hover .skull-dramatic { opacity: 1; transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 20px var(--blood-bright)); }
+    .food-blood-sweep { position: absolute; bottom: 0; left: 0; right: 0; height: 48px; z-index: 3; pointer-events: none;
+      background: linear-gradient(0deg, rgba(139,0,0,0.65), transparent); transform: translateY(100%); transition: transform 0.45s ease; }
+    .food-card-3d:hover .food-blood-sweep { transform: translateY(0); }
+    .food-blood-sweep::after { content: ""; position: absolute; bottom: 0; left: -100%; width: 50%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(204,0,0,0.5), transparent); animation: bloodBarSweep 1.5s ease infinite; }
+    @keyframes bloodBarSweep { 0% { left: -50%; } 100% { left: 150%; } }
+    .food-card-3d .food-img-wrap { position: relative; height: 160px; overflow: hidden; border-radius: 2px 2px 0 0; }
+    .food-card-3d .food-img { width: 100%; height: 160px; object-fit: cover; display: block; background: var(--ash); }
+    .food-card-3d .price-gold { color: var(--gold-bright); font-weight: 700; animation: pricePulse 2.2s ease-in-out infinite; }
+    @keyframes pricePulse { 0%, 100% { text-shadow: 0 0 8px rgba(218,165,32,0.5); } 50% { text-shadow: 0 0 18px rgba(218,165,32,0.95), 0 0 28px rgba(204,0,0,0.35); } }
+    .combo-card-3d { position: relative; transform-style: preserve-3d; transition: transform 0.18s ease-out; border-radius: 6px; overflow: visible;
+      padding: 3px; background: linear-gradient(135deg, var(--blood-deep), var(--gold-bright), var(--blood-deep)); background-size: 200% 200%; }
+    .combo-card-inner { position: relative; z-index: 1; background: var(--charcoal); border-radius: 4px; padding: 0.75rem; }
+    .combo-card-3d .combo-img-wrap { position: relative; overflow: hidden; border-radius: 2px; margin-bottom: 0.5rem; }
+    .combo-card-3d img { width: 100%; height: 140px; object-fit: cover; display: block; }
+    .combo-shimmer-diag { position: absolute; inset: 0; pointer-events: none; opacity: 0; z-index: 2;
+      background: linear-gradient(-135deg, transparent 35%, rgba(255,255,255,0.15) 50%, transparent 65%); background-size: 200% 200%; }
+    .combo-card-3d:hover .combo-shimmer-diag { opacity: 1; animation: comboDiag 1s ease-out; }
+    @keyframes comboDiag { 0% { background-position: 100% 100%; } 100% { background-position: -100% -100%; } }
+    .combo-sparks { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
+    .combo-sparks span { position: absolute; width: 6px; height: 6px; border-radius: 50%; opacity: 0; }
+    .combo-card-3d:hover .combo-sparks span { animation: sparkPop 0.6s ease-out forwards; }
+    @keyframes sparkPop { 0% { opacity: 0; transform: translate(0,0) scale(0); } 40% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--sx), var(--sy)) scale(1); } }
+    .combo-sparks span:nth-child(1) { left: 20%; top: 30%; background: #ff4444; animation-delay: 0s; --sx: 25px; --sy: -35px; }
+    .combo-sparks span:nth-child(2) { left: 60%; top: 20%; background: #daa520; animation-delay: 0.05s; --sx: -20px; --sy: -28px; }
+    .combo-sparks span:nth-child(3) { left: 80%; top: 45%; background: #cc0000; animation-delay: 0.1s; --sx: 15px; --sy: -40px; }
+    .combo-sparks span:nth-child(4) { left: 30%; top: 55%; background: #ffd700; animation-delay: 0.08s; --sx: -30px; --sy: -20px; }
+    .combo-sparks span:nth-child(5) { left: 70%; top: 60%; background: #8b0000; animation-delay: 0.12s; --sx: 22px; --sy: -32px; }
+    .combo-sparks span:nth-child(6) { left: 45%; top: 35%; background: #ff8c00; animation-delay: 0.03s; --sx: -18px; --sy: -38px; }
+    .combo-bottom-line { height: 3px; margin-top: 0.65rem; border-radius: 2px;
+      background: linear-gradient(90deg, var(--blood-deep), var(--gold-bright), var(--blood-deep)); background-size: 200% 100%; opacity: 0.55; }
+    .combo-card-3d:hover .combo-bottom-line { animation: comboLineFlow 1.5s linear infinite; opacity: 1; }
+    @keyframes comboLineFlow { 0% { background-position: 0% 0; } 100% { background-position: 200% 0; } }
+    .btn-combo-add { clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%);
+      box-shadow: 0 0 12px rgba(218, 165, 32, 0.35), inset 0 0 20px rgba(139, 0, 0, 0.2); margin-top: 0.5rem; width: 100%; }
+    .btn-combo-add:hover { box-shadow: 0 0 22px rgba(218, 165, 32, 0.55); }
+    .drip-color { color: var(--blood); }
+    .video-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; perspective: 1000px; }
+    @media (max-width: 900px) { .video-row { grid-template-columns: 1fr; } }
+    .video-card { padding: 0; overflow: hidden; transition: transform 0.4s ease, box-shadow 0.35s; transform-style: preserve-3d; }
+    .video-card:hover { box-shadow: 0 0 25px rgba(204, 0, 0, 0.4); }
+    .video-inner { position: relative; aspect-ratio: 16/10; background: #000; }
+    .video-inner video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .play-ghost { position: absolute; inset: 0; margin: auto; width: 48px; height: 48px; border-radius: 50%; background: rgba(0,0,0,0.45); color: #fff; border: 1px solid var(--blood); font-size: 1.2rem; cursor: default; pointer-events: none; }
+    .video-meta { padding: 1rem; }
+    .video-meta h3 { font-size: 1.1rem; margin-bottom: 0.35rem; color: var(--parchment); }
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    @media (max-width: 768px) { .features-grid { grid-template-columns: 1fr; } }
+    .feature-card { padding: 1.25rem; text-align: center; }
+    .feature-card .fi { font-size: 2rem; display: block; margin-bottom: 0.5rem; }
+    .feature-card h3 { font-size: 0.95rem; margin-bottom: 0.35rem; color: var(--bone); }
+    .filter-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; justify-content: center; }
+    .filter-btn { padding: 0.35rem 0.75rem; background: var(--ash); border: 1px solid var(--blood-deep); color: var(--bone); cursor: pointer; font-family: Cinzel, serif; font-size: 0.75rem; }
+    .filter-btn.active, .filter-btn:hover { border-color: var(--blood-bright); color: var(--parchment); }
+    .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.25rem; perspective: 1200px; }
+    .food-card { position: relative; overflow: hidden; }
+    .food-card .food-img { width: 100%; height: 160px; object-fit: cover; display: block; background: var(--ash); }
+    .food-card-body { padding: 0.75rem; }
+    .badge-pill { display: inline-block; font-size: 0.65rem; padding: 0.15rem 0.4rem; background: var(--blood-deep); color: var(--bone); margin-bottom: 0.35rem; }
+    .food-card h4 { font-family: Cinzel, serif; font-size: 1rem; margin-bottom: 0.25rem; }
+    .food-card .price { color: var(--gold-bright); font-weight: 700; }
+    .food-card .skull-hover { position: absolute; top: 8px; right: 8px; font-size: 1.5rem; opacity: 0; transition: opacity 0.25s; }
+    .food-card:hover .skull-hover { opacity: 1; }
+    .empty-msg { text-align: center; color: var(--bone); font-style: italic; padding: 2rem; }
+    .hidden { display: none !important; }
+    .combos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; perspective: 1400px; }
+    .combo-card-3d .strike { text-decoration: line-through; color: var(--bone); opacity: 0.7; }
+    .combo-card-3d .save { color: var(--gold-bright); font-size: 0.8rem; }
+    .booking-top { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: flex-end; }
+    .booking-top label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.85rem; }
+    .booking-top input, .booking-top select { background: var(--ash); border: 1px solid var(--blood-deep); color: var(--parchment); padding: 0.4rem 0.6rem; font-family: inherit; }
+    .floor-hint { margin-bottom: 0.75rem; color: var(--bone); font-size: 0.9rem; }
+    .floor-wrap { padding: 1rem; background: var(--charcoal); margin-bottom: 1.5rem; }
+    .floor-svg { width: 100%; max-width: 640px; display: block; margin: 0 auto; }
+    .table-shape { cursor: pointer; transition: filter 0.3s, stroke 0.3s; }
+    .table-shape.avail { filter: drop-shadow(0 0 8px #0f0); }
+    .table-shape.booked { filter: drop-shadow(0 0 10px #f00); cursor: not-allowed; opacity: 0.85; }
+    .table-shape.selected { filter: drop-shadow(0 0 12px #daa520); }
+    .booking-form { max-width: 480px; display: flex; flex-direction: column; gap: 0.75rem; }
+    .booking-form input, .booking-form textarea { background: var(--ash); border: 1px solid var(--blood-deep); color: var(--parchment); padding: 0.5rem; font-family: inherit; }
+    .bk-selected { color: var(--gold); }
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
+    @media (max-width: 768px) { .about-grid { grid-template-columns: 1fr; } }
+    .about-text p { line-height: 1.7; margin-bottom: 1rem; color: var(--bone); }
+    .about-text .mt { margin-top: 1rem; }
+    .about-list { list-style: none; margin: 1rem 0; color: var(--parchment); }
+    .about-list li { margin-bottom: 0.5rem; }
+    .stats { display: flex; gap: 2rem; margin-top: 1.5rem; flex-wrap: wrap; }
+    .stats div { text-align: center; }
+    .stats strong { display: block; font-size: 2rem; color: var(--blood-bright); font-family: Cinzel, serif; }
+    .stats span { font-size: 0.75rem; color: var(--bone); }
+    .about-visual { padding: 2rem; text-align: center; min-height: 280px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .skull-frame { font-size: 8rem; line-height: 1; filter: drop-shadow(0 0 20px var(--blood)); }
+    .cap { margin-top: 1rem; color: var(--gold); }
+    .admin-login-wrap { min-height: 60vh; display: flex; align-items: center; justify-content: center; }
+    .admin-box { max-width: 380px; width: 100%; padding: 2rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .admin-box input { background: var(--ash); border: 1px solid var(--blood-deep); color: var(--parchment); padding: 0.5rem; }
+    .err { color: var(--blood-bright); font-size: 0.85rem; }
+    .admin-tabs { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 1rem 0; }
+    .tab-btn { background: var(--ash); border: 1px solid var(--blood-deep); color: var(--bone); padding: 0.4rem 0.7rem; cursor: pointer; font-size: 0.75rem; }
+    .tab-btn.active { border-color: var(--gold); color: var(--parchment); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .admin-form { max-width: 480px; display: flex; flex-direction: column; gap: 0.65rem; }
+    .admin-form input, .admin-form textarea, .admin-form select { background: var(--ash); border: 1px solid var(--blood-deep); color: var(--parchment); padding: 0.45rem; font-family: inherit; }
+    .thumb-preview { max-width: 200px; max-height: 160px; object-fit: cover; border: 1px solid var(--blood); }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    .data-table th, .data-table td { border: 1px solid var(--blood-deep); padding: 0.45rem; text-align: left; vertical-align: top; }
+    .data-table th { background: var(--ash); color: var(--bone); }
+    .table-scroll { overflow-x: auto; }
+    .status-pending { color: #ca8; } .status-approved { color: #8c8; } .status-delivered { color: #88c; }
+    .mb { margin-bottom: 1rem; }
+    .cart-sidebar { position: fixed; top: 0; right: 0; width: min(400px, 100%); height: 100%; background: var(--charcoal); z-index: 1200; transform: translateX(100%); transition: transform 0.35s ease; border-left: 1px solid var(--blood-deep); display: flex; flex-direction: column; }
+    .cart-sidebar.open { transform: translateX(0); }
+    .cart-head { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--blood-deep); }
+    .cart-items { flex: 1; overflow-y: auto; padding: 1rem; }
+    .cart-line { display: flex; gap: 0.75rem; align-items: flex-start; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--ash); }
+    .cart-line img { width: 56px; height: 56px; object-fit: cover; }
+    .cart-line .qty { display: flex; align-items: center; gap: 0.35rem; }
+    .cart-foot { padding: 1rem; border-top: 1px solid var(--blood-deep); }
+    .gold-total { color: var(--gold-bright); font-size: 1.25rem; font-weight: 700; }
+    .btn.full { width: 100%; margin-top: 0.75rem; }
+    .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 1190; }
+    .modal { position: fixed; inset: 0; z-index: 1300; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(0,0,0,0.75); }
+    .modal-inner { max-width: 440px; width: 100%; padding: 1.5rem; position: relative; max-height: 90vh; overflow-y: auto; }
+    .modal.hidden { display: none; }
+    .btn-close { position: absolute; top: 0.5rem; right: 0.5rem; background: none; border: none; color: var(--bone); font-size: 1.5rem; cursor: pointer; }
+    .order-summary { background: var(--ash); padding: 0.75rem; margin: 0.75rem 0; font-size: 0.85rem; }
+    .grand-total { color: var(--gold-bright); font-size: 1.1rem; }
+    .pay-fieldset { border: 1px solid var(--blood-deep); padding: 0.75rem; margin: 0.5rem 0; }
+    .pay-card { display: block; margin: 0.35rem 0; cursor: pointer; }
+    .thank-overlay { position: fixed; inset: 0; z-index: 1400; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .thank-overlay.hidden { display: none; }
+    .thank-inner { max-width: 420px; text-align: center; padding: 2rem; animation: scaleIn 0.5s ease; }
+    @keyframes scaleIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .thank-candle { font-size: 3rem; }
+    .thank-logo { font-size: 2.5rem; color: var(--parchment); margin: 0.5rem 0; }
+    .thank-title { color: var(--gold-bright); margin-bottom: 1rem; }
+    .thank-body { color: var(--bone); line-height: 1.65; margin-bottom: 1rem; font-size: 0.95rem; }
+    .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); z-index: 1500; background: var(--blood-deep); border: 1px solid var(--blood-bright); padding: 0.75rem 1.25rem; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+    .site-footer { border-top: 1px solid var(--blood-deep); margin-top: 2rem; padding-top: 2rem; background: linear-gradient(180deg, transparent, #0a0a0a); }
+    .footer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+    @media (max-width: 768px) { .footer-grid { grid-template-columns: 1fr; } }
+    .footer-logo { font-size: 2rem; color: var(--parchment); }
+    .tag { color: var(--bone); font-style: italic; margin-top: 0.35rem; }
+    .footer-nav a { margin: 0 0.15rem; }
+    .map-wrap { max-width: 1200px; margin: 1rem auto; padding: 0 1.25rem; }
+    .footer-bottom { text-align: center; padding: 1.5rem; color: var(--bone); font-size: 0.8rem; }
+    .socials a { color: var(--blood-bright); }
+    body.mode-god .section-title { text-shadow: 0 0 15px rgba(218, 165, 32, 0.4); }
+    body.mode-arcane .section-title { text-shadow: 0 0 15px rgba(45, 212, 191, 0.35); }
+  </style>
+
+  <script id="mortis-app">
+(function () {
+  const STORAGE_KEY = 'mortis_state_v1';
+  const state = {
+    foods: [],
+    combos: [],
+    cart: [],
+    orders: [],
+    bookings: [],
+    tableBookings: {},
+    selectedPayment: 'online',
+    currentMode: 'horror',
+    oracleMessages: [
+      'The dead are hungry tonight. Will you feed them?',
+      'Your table has been prepared in the shadow realm.',
+      'Count Voss sees you. He approves of your hunger.',
+      'The crypt whispers your name. Do not keep it waiting.',
+      "Tonight's special: the dish that cannot be named."
+    ],
+    oracleIndex: 0
+  };
+  let oracleTimer = null;
+  const TABLES = [
+    { id: 1, name: "The Widow's Chair", x: 60, y: 60, w: 100, h: 70 },
+    { id: 2, name: "The Count's Throne", x: 200, y: 60, w: 100, h: 70 },
+    { id: 3, name: "The Coven's Circle", x: 340, y: 60, w: 100, h: 70 },
+    { id: 4, name: "The Mourner's Alcove", x: 130, y: 200, w: 120, h: 80 },
+    { id: 5, name: "The Phantom's Corner", x: 300, y: 200, w: 120, h: 80 }
+  ];
+  const TIME_SLOTS = [
+    { v: '18:00', label: 'Dusk' },
+    { v: '19:00', label: 'Twilight' },
+    { v: '20:00', label: 'Witching Hour' },
+    { v: '21:00', label: 'Midnight' },
+    { v: '22:00', label: 'The Dead Hour' }
+  ];
+  const CATEGORIES = ['All', 'Starters', 'Mains', 'Desserts', 'Drinks', 'Sides'];
+  let shopFilter = 'All';
+  let foodImg = null;
+  let comboImg = null;
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      state.foods = d.foods || [];
+      state.combos = d.combos || [];
+      state.orders = d.orders || [];
+      state.bookings = d.bookings || [];
+      state.tableBookings = d.tableBookings || {};
+      state.cart = d.cart || [];
+      if (d.currentMode && ['horror', 'god', 'arcane', 'oracle'].indexOf(d.currentMode) !== -1) {
+        state.currentMode = d.currentMode;
+      }
+    } catch (e) {}
+  }
+  function saveState() {
+    const payload = {
+      foods: state.foods,
+      combos: state.combos,
+      orders: state.orders,
+      bookings: state.bookings,
+      tableBookings: state.tableBookings,
+      cart: state.cart,
+      currentMode: state.currentMode
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  }
+  function uid(prefix) {
+    return prefix + '-' + Math.random().toString(36).slice(2, 9);
+  }
+  function orderId() {
+    return 'MORT-' + Math.floor(1000 + Math.random() * 9000);
+  }
+
+  function renderOrders() {
+    renderAdmin();
+  }
+
+  function placeOrder() {
+    const name = document.getElementById('oName').value.trim();
+    const phone = document.getElementById('oPhone').value.trim();
+    const address = document.getElementById('oAddress').value.trim();
+    if (!name || !phone || !address) {
+      toast('Please fill all fields!');
+      return;
+    }
+    if (state.cart.length === 0) {
+      toast('Your cart is empty.');
+      return;
+    }
+    const payEl = document.querySelector('input[name="pay"]:checked');
+    if (payEl) state.selectedPayment = payEl.value;
+    const payment = state.selectedPayment === 'online' ? 'Online' : 'Hand to Hand';
+    const oid = orderId();
+    const itemsSnapshot = JSON.parse(JSON.stringify(state.cart));
+    let total = 0;
+    state.cart.forEach(function (l) { total += l.price * l.qty; });
+    const order = {
+      id: String(oid),
+      name: name,
+      phone: phone,
+      address: address,
+      items: itemsSnapshot,
+      total: total,
+      payment: payment,
+      status: 'Pending'
+    };
+    state.orders.push(order);
+    state.cart = [];
+    saveState();
+    renderCart();
+    document.getElementById('order-modal').classList.add('hidden');
+    document.getElementById('cartSidebar').classList.remove('open');
+    document.getElementById('cart-backdrop').classList.add('hidden');
+    document.getElementById('thanksOrderId').textContent = 'Order ID: ' + oid;
+    document.getElementById('thankYou').classList.remove('hidden');
+    document.getElementById('order-form').reset();
+    renderOrders();
+  }
+
+  function isTableBooked(date, time, tableId) {
+    return state.tableBookings[`${date}_${time}_${tableId}`] === true;
+  }
+
+  function switchMode(mode) {
+    document.body.className = 'mode-' + mode;
+    state.currentMode = mode;
+    saveState();
+    const label = document.getElementById('mode-label');
+    const oracleWrap = document.getElementById('oracle-bubble-wrap');
+    document.querySelectorAll('.mode-btn').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-mode') === mode);
+    });
+    if (mode === 'oracle') {
+      if (label) label.textContent = '';
+      if (oracleWrap) oracleWrap.classList.remove('hidden');
+      startOracleCycle();
+    } else {
+      if (label) {
+        if (mode === 'god') label.textContent = 'You have entered God Mode. Mortals bow.';
+        else if (mode === 'arcane') label.textContent = 'The Arcane awakens. Ancient magic stirs.';
+        else label.textContent = '';
+      }
+      if (oracleWrap) oracleWrap.classList.add('hidden');
+      stopOracleCycle();
+    }
+    if (mode === 'arcane') buildRunes();
+  }
+
+  function startOracleCycle() {
+    stopOracleCycle();
+    const el = document.getElementById('oracle-speech');
+    if (!el) return;
+    function show() {
+      el.style.opacity = '0';
+      setTimeout(function () {
+        el.textContent = state.oracleMessages[state.oracleIndex];
+        el.style.opacity = '1';
+        state.oracleIndex = (state.oracleIndex + 1) % state.oracleMessages.length;
+      }, 250);
+    }
+    show();
+    oracleTimer = setInterval(show, 4000);
+  }
+  function stopOracleCycle() {
+    if (oracleTimer) { clearInterval(oracleTimer); oracleTimer = null; }
+  }
+
+  function buildRunes() {
+    const layer = document.getElementById('rune-layer');
+    if (!layer) return;
+    layer.innerHTML = '';
+    const runes = ['ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ'];
+    for (let i = 0; i < 18; i++) {
+      const s = document.createElement('span');
+      s.className = 'rune';
+      s.textContent = runes[i % runes.length];
+      s.style.left = (Math.random() * 100) + '%';
+      s.style.top = (Math.random() * 100) + '%';
+      s.style.animationDuration = (18 + Math.random() * 20) + 's';
+      s.style.animationDelay = (Math.random() * -25) + 's';
+      layer.appendChild(s);
+    }
+  }
+
+  function navigate(page) {
+    if (page === 'cart') {
+      document.getElementById('cartSidebar').classList.add('open');
+      document.getElementById('cart-backdrop').classList.remove('hidden');
+      return;
+    }
+    document.getElementById('cartSidebar').classList.remove('open');
+    document.getElementById('cart-backdrop').classList.add('hidden');
+    if (page === 'admin' && sessionStorage.getItem('mortis_admin') !== '1') {
+      page = 'admin-login';
+    }
+    document.querySelectorAll('.page').forEach(function (p) { p.classList.remove('active'); });
+    const map = { home: 'page-home', shop: 'page-shop', combos: 'page-combos', booking: 'page-booking', about: 'page-about', 'admin-login': 'page-admin-login', admin: 'page-admin' };
+    const id = map[page] || 'page-home';
+    const el = document.getElementById(id);
+    if (el) el.classList.add('active');
+    document.querySelectorAll('.nav-links a[data-nav]').forEach(function (a) {
+      const nav = a.getAttribute('data-nav');
+      const on = nav === page || (page === 'admin-login' && nav === 'admin');
+      a.classList.toggle('active', on);
+    });
+    if (page === 'admin') renderAdmin();
+    if (page === 'booking') renderFloorMap();
+    if (page === 'combos') renderCombos();
+    window.scrollTo(0, 0);
+  }
+
+  function renderShopFilters() {
+    const bar = document.getElementById('shop-filters');
+    if (!bar) return;
+    bar.innerHTML = CATEGORIES.map(function (c) {
+      return '<button type="button" class="filter-btn' + (shopFilter === c ? ' active' : '') + '" data-cat="' + c + '">' + c + '</button>';
+    }).join('');
+    bar.querySelectorAll('.filter-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        shopFilter = btn.getAttribute('data-cat');
+        renderShopFilters();
+        renderShop();
+      });
+    });
+  }
+
+  function renderShop() {
+    const grid = document.getElementById('shop-grid');
+    const empty = document.getElementById('shop-empty');
+    if (!grid) return;
+    let list = state.foods;
+    if (shopFilter !== 'All') list = state.foods.filter(function (f) { return f.category === shopFilter; });
+    if (list.length === 0) {
+      grid.innerHTML = '';
+      if (empty) empty.classList.remove('hidden');
+      return;
+    }
+    if (empty) empty.classList.add('hidden');
+    grid.innerHTML = list.map(function (f) {
+      return '<article class="food-card food-card-3d victorian-corners card-hover-shimmer card-arcane" data-tilt-shop>' +
+        '<div class="food-3d-inner">' +
+        '<div class="food-shimmer"></div>' +
+        '<div class="food-img-wrap">' +
+        '<img class="food-img" src="' + (f.image || '') + '" alt="" />' +
+        '<span class="skull-dramatic" aria-hidden="true">💀</span>' +
+        '<div class="food-blood-sweep"></div>' +
+        '</div>' +
+        '<div class="food-card-body">' +
+        (f.badge ? '<span class="badge-pill">' + escapeHtml(f.badge) + '</span>' : '') +
+        '<h4>' + escapeHtml(f.name) + '</h4>' +
+        '<p class="desc">' + escapeHtml(f.desc || '') + '</p>' +
+        '<p class="price price-gold">' + formatRs(f.price) + '</p>' +
+        '<button type="button" class="btn btn-outline btn-sm" data-add-food="' + f.id + '">+ Add</button>' +
+        '</div></div></article>';
+    }).join('');
+    grid.querySelectorAll('[data-add-food]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        addToCart(btn.getAttribute('data-add-food'), 'food');
+      });
+    });
+    initShopTilt();
+  }
+
+  function renderCombos() {
+    const grid = document.getElementById('combos-grid');
+    const empty = document.getElementById('combos-empty');
+    if (!grid) return;
+    if (state.combos.length === 0) {
+      grid.innerHTML = '';
+      if (empty) empty.classList.remove('hidden');
+      return;
+    }
+    if (empty) empty.classList.add('hidden');
+    grid.innerHTML = state.combos.map(function (c) {
+      const items = (c.items || []).map(function (line) { return '<li>' + escapeHtml(line) + '</li>'; }).join('');
+      const save = c.original > c.price ? Math.round(c.original - c.price) : 0;
+      return '<article class="combo-card-3d victorian-corners card-hover-shimmer card-arcane" data-combo-tilt>' +
+        '<div class="combo-card-inner">' +
+        '<div class="combo-img-wrap">' +
+        '<img src="' + (c.image || '') + '" alt="" />' +
+        '<div class="combo-shimmer-diag"></div>' +
+        '<div class="combo-sparks"><span></span><span></span><span></span><span></span><span></span><span></span></div>' +
+        '</div>' +
+        '<h4>' + escapeHtml(c.name) + '</h4>' +
+        (c.tag ? '<p class="save">' + escapeHtml(c.tag) + '</p>' : '') +
+        '<ul style="margin:0.5rem 0;padding-left:1.2rem">' + items + '</ul>' +
+        '<p><span class="strike">' + formatRs(c.original) + '</span> → <strong class="price">' + formatRs(c.price) + '</strong>' +
+        (save ? ' <span class="save">Save ' + formatRs(save) + '</span>' : '') + '</p>' +
+        '<button type="button" class="btn btn-primary btn-combo-add" data-add-combo="' + c.id + '">Add Combo</button>' +
+        '<div class="combo-bottom-line" aria-hidden="true"></div>' +
+        '</div>' +
+        '</article>';
+    }).join('');
+    grid.querySelectorAll('[data-add-combo]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        addToCart(btn.getAttribute('data-add-combo'), 'combo');
+      });
+    });
+    initComboTilt();
+  }
+
+  function addCombo(formEl) {
+    if (!formEl) return;
+    if (!comboImg) {
+      toast('Upload an image.');
+      return;
+    }
+    const fd = new FormData(formEl);
+    const lines = (fd.get('items') || '').split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+    if (!lines.length) {
+      toast('Add at least one item (one per line).');
+      return;
+    }
+    const name = (fd.get('name') || '').trim();
+    if (!name) {
+      toast('Enter a combo name.');
+      return;
+    }
+    const price = parseFloat(fd.get('price'));
+    const original = parseFloat(fd.get('original'));
+    if (isNaN(price) || price < 0 || isNaN(original) || original < 0) {
+      toast('Enter valid prices.');
+      return;
+    }
+    state.combos.push({
+      id: uid('C'),
+      name: name,
+      price: price,
+      original: original,
+      tag: (fd.get('tag') || '').trim(),
+      items: lines,
+      image: comboImg
+    });
+    comboImg = null;
+    formEl.reset();
+    const prev = document.getElementById('preview-combo');
+    if (prev) {
+      prev.classList.add('hidden');
+      prev.removeAttribute('src');
+    }
+    saveState();
+    renderCombos();
+    renderAdmin();
+    toast('Combo sealed. The Combos page is updated.');
+  }
+
+  function formatRs(n) { return '₹' + (Number(n) || 0); }
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+  function escapeSvgText(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function addToCart(id, type) {
+    let item;
+    if (type === 'food') {
+      const f = state.foods.find(function (x) { return x.id === id; });
+      if (!f) return;
+      item = { id: f.id, name: f.name, price: f.price, image: f.image, type: 'food' };
+    } else {
+      const c = state.combos.find(function (x) { return x.id === id; });
+      if (!c) return;
+      item = { id: c.id, name: c.name, price: c.price, image: c.image, type: 'combo' };
+    }
+    const lineId = item.type + '-' + item.id;
+    const existing = state.cart.find(function (l) { return l.lineId === lineId; });
+    if (existing) existing.qty += 1;
+    else state.cart.push({ lineId: lineId, id: item.id, name: item.name, price: item.price, image: item.image, type: item.type, qty: 1 });
+    saveState();
+    renderCart();
+    toast('Added to your tribute.');
+  }
+
+  function renderCart() {
+    const wrap = document.getElementById('cart-items');
+    const count = document.getElementById('cart-count');
+    const totalEl = document.getElementById('cart-total');
+    let total = 0;
+    let n = 0;
+    state.cart.forEach(function (l) {
+      total += l.price * l.qty;
+      n += l.qty;
+    });
+    if (count) count.textContent = n;
+    if (totalEl) totalEl.textContent = formatRs(total);
+    if (!wrap) return;
+    if (state.cart.length === 0) {
+      wrap.innerHTML = '<p class="empty-msg" style="padding:1rem">The cart is as empty as a tomb.</p>';
+      return;
+    }
+    wrap.innerHTML = state.cart.map(function (l) {
+      return '<div class="cart-line">' +
+        '<img src="' + (l.image || '') + '" alt="" />' +
+        '<div style="flex:1">' +
+        '<strong>' + escapeHtml(l.name) + '</strong>' +
+        '<p class="price">' + formatRs(l.price) + ' × ' + l.qty + '</p>' +
+        '<div class="qty">' +
+        '<button type="button" data-q="-1" data-line="' + l.lineId + '">−</button>' +
+        '<span>' + l.qty + '</span>' +
+        '<button type="button" data-q="1" data-line="' + l.lineId + '">+</button>' +
+        '<button type="button" data-remove="' + l.lineId + '">Remove</button>' +
+        '</div></div></div>';
+    }).join('');
+    wrap.querySelectorAll('[data-q]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const lineId = btn.getAttribute('data-line');
+        const delta = parseInt(btn.getAttribute('data-q'), 10);
+        const line = state.cart.find(function (x) { return x.lineId === lineId; });
+        if (!line) return;
+        line.qty += delta;
+        if (line.qty <= 0) state.cart = state.cart.filter(function (x) { return x.lineId !== lineId; });
+        saveState();
+        renderCart();
+      });
+    });
+    wrap.querySelectorAll('[data-remove]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const lineId = btn.getAttribute('data-remove');
+        state.cart = state.cart.filter(function (x) { return x.lineId !== lineId; });
+        saveState();
+        renderCart();
+      });
+    });
+  }
+
+  function renderFloorMap() {
+    const svg = document.getElementById('floor-svg');
+    const date = document.getElementById('bk-date') && document.getElementById('bk-date').value;
+    const time = document.getElementById('bk-time') && document.getElementById('bk-time').value;
+    const hint = document.getElementById('floor-hint');
+    if (!svg) return;
+    if (!date || !time) {
+      svg.innerHTML = '';
+      if (hint) hint.textContent = 'Select date and time to reveal the floor.';
+      return;
+    }
+    if (hint) hint.textContent = 'Green: available · Red: taken · Gold: your selection';
+    const selected = document.getElementById('bk-table-id') && document.getElementById('bk-table-id').value;
+    let html = '<rect x="10" y="10" width="500" height="340" fill="#0d0d0d" stroke="#4a0000" />';
+    TABLES.forEach(function (t) {
+      const booked = isTableBooked(date, time, t.id);
+      let cls = 'table-shape';
+      if (booked) cls += ' booked';
+      else cls += ' avail';
+      if (selected && String(selected) === String(t.id)) cls += ' selected';
+      html += '<g class="' + cls + '" data-table="' + t.id + '" transform="translate(' + t.x + ',' + t.y + ')">';
+      html += '<rect x="0" y="0" width="' + t.w + '" height="' + t.h + '" rx="4" fill="#1a0a0a" stroke="#8B0000" stroke-width="2" />';
+      html += '<text x="' + (t.w / 2) + '" y="' + (t.h / 2 - 6) + '" text-anchor="middle" fill="#C8B89A" font-size="11" font-family="Cinzel,serif">Table ' + t.id + '</text>';
+      html += '<text x="' + (t.w / 2) + '" y="' + (t.h / 2 + 10) + '" text-anchor="middle" fill="#888" font-size="8" font-family="EB Garamond,serif">' + escapeSvgText(t.name) + '</text>';
+      html += '<circle cx="' + (t.w / 2) + '" cy="-10" r="5" fill="#2a2a2a" stroke="#444" stroke-width="1" />';
+      html += '<circle cx="' + (t.w / 2) + '" cy="' + (t.h + 10) + '" r="5" fill="#2a2a2a" stroke="#444" stroke-width="1" />';
+      html += '<circle cx="-12" cy="' + (t.h / 2) + '" r="5" fill="#2a2a2a" stroke="#444" stroke-width="1" />';
+      html += '<circle cx="' + (t.w + 12) + '" cy="' + (t.h / 2) + '" r="5" fill="#2a2a2a" stroke="#444" stroke-width="1" />';
+      html += '</g>';
+    });
+    svg.innerHTML = html;
+    svg.querySelectorAll('.table-shape').forEach(function (g) {
+      g.addEventListener('click', function () {
+        const tid = g.getAttribute('data-table');
+        const d = document.getElementById('bk-date').value;
+        const tm = document.getElementById('bk-time').value;
+        if (!d || !tm) return;
+        if (g.classList.contains('booked')) {
+          toast('That soul is already seated.');
+          return;
+        }
+        document.getElementById('bk-table-id').value = tid;
+        const t = TABLES.find(function (x) { return String(x.id) === String(tid); });
+        document.getElementById('bk-table-label').textContent = t ? 'Selected: ' + t.name + ' (Table ' + t.id + ')' : '';
+        renderFloorMap();
+      });
+    });
+  }
+
+  function renderAdmin() {
+    const ob = document.getElementById('orders-tbody');
+    if (ob) {
+      ob.innerHTML = state.orders.map(function (o) {
+        const items = (o.items || []).map(function (i) { return i.name + ' ×' + i.qty; }).join(', ');
+        var actions = '';
+        if (o.status === 'Pending') {
+          actions = '<button type="button" class="btn btn-outline btn-sm" data-approve="' + o.id + '">Approve</button>';
+        } else if (o.status === 'Approved') {
+          actions = '<button type="button" class="btn btn-outline btn-sm" data-deliver="' + o.id + '">Mark Delivered</button>';
+        }
+        return '<tr><td>' + escapeHtml(o.id) + '</td><td>' + escapeHtml(o.name) + '</td><td>' + escapeHtml(o.phone) + '</td><td>' + escapeHtml(items) + '</td><td>' + formatRs(o.total) + '</td><td>' + escapeHtml(o.payment) + '</td><td class="' + statusClass(o.status) + '">' + statusLabel(o.status) + '</td><td>' + actions + '</td></tr>';
+      }).join('');
+      ob.querySelectorAll('[data-approve]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const id = btn.getAttribute('data-approve');
+          const o = state.orders.find(function (x) { return x.id === id; });
+          if (o) { o.status = 'Approved'; saveState(); renderAdmin(); }
+        });
+      });
+      ob.querySelectorAll('[data-deliver]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const id = btn.getAttribute('data-deliver');
+          const o = state.orders.find(function (x) { return x.id === id; });
+          if (o) { o.status = 'Delivered'; saveState(); renderAdmin(); }
+        });
+      });
+    }
+    const mb = document.getElementById('manage-food-tbody');
+    if (mb) {
+      mb.innerHTML = state.foods.map(function (f) {
+        return '<tr><td><img class="thumb-preview" style="width:48px;height:48px" src="' + (f.image || '') + '" alt="" /></td><td>' + escapeHtml(f.name) + '</td><td>' + escapeHtml(f.category) + '</td><td>' + formatRs(f.price) + '</td><td><button type="button" class="btn btn-outline btn-sm" data-del-food="' + f.id + '">Delete</button></td></tr>';
+      }).join('');
+      mb.querySelectorAll('[data-del-food]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const id = btn.getAttribute('data-del-food');
+          state.foods = state.foods.filter(function (x) { return x.id !== id; });
+          saveState();
+          renderShop();
+          renderAdmin();
+        });
+      });
+    }
+    const bb = document.getElementById('bookings-tbody');
+    const bsummary = document.getElementById('bookings-by-day');
+    if (bsummary) {
+      const byDate = {};
+      state.bookings.forEach(function (b) {
+        byDate[b.date] = (byDate[b.date] || 0) + 1;
+      });
+      const keys = Object.keys(byDate).sort();
+      bsummary.innerHTML = keys.length
+        ? '<strong>Reservations per night:</strong> ' + keys.map(function (d) {
+            return d + ' — ' + byDate[d] + ' soul(s)';
+          }).join(' · ')
+        : 'No reservations yet.';
+    }
+    if (bb) {
+      bb.innerHTML = state.bookings.map(function (b) {
+        return '<tr><td>' + escapeHtml(b.name) + '</td><td>' + escapeHtml(b.email) + '</td><td>' + escapeHtml(b.phone) + '</td><td>' + escapeHtml(b.date) + '</td><td>' + escapeHtml(b.time) + '</td><td>' + escapeHtml(b.tableName) + '</td><td>' + b.guests + '</td><td>' + escapeHtml(b.request || '') + '</td></tr>';
+      }).join('');
+    }
+  }
+  function statusClass(s) {
+    if (s === 'Pending') return 'status-pending';
+    if (s === 'Approved') return 'status-approved';
+    if (s === 'Delivered') return 'status-delivered';
+    return '';
+  }
+  function statusLabel(s) {
+    if (s === 'Pending') return '🟡 Pending';
+    if (s === 'Approved') return '🟢 Approved';
+    if (s === 'Delivered') return '🔵 Delivered';
+    return s;
+  }
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.remove('hidden');
+    clearTimeout(t._to);
+    t._to = setTimeout(function () { t.classList.add('hidden'); }, 3500);
+  }
+
+  function initTilt() {
+    document.querySelectorAll('[data-tilt]').forEach(function (card) {
+      card.addEventListener('mousemove', function (e) {
+        const rect = card.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width - 0.5;
+        const y = (e.clientY - rect.top) / rect.height - 0.5;
+        card.style.transform = 'perspective(1000px) rotateY(' + (x * 20) + 'deg) rotateX(' + (-y * 20) + 'deg) translateY(-6px)';
+      });
+      card.addEventListener('mouseleave', function () {
+        card.style.transform = 'perspective(1000px) rotateY(0) rotateX(0) translateY(0)';
+      });
+    });
+  }
+
+  function initShopTilt() {
+    document.querySelectorAll('[data-tilt-shop]').forEach(function (card) {
+      var inner = card.querySelector('.food-3d-inner');
+      if (!inner) return;
+      card.addEventListener('mousemove', function (e) {
+        var rect = card.getBoundingClientRect();
+        var x = (e.clientX - rect.left) / rect.width - 0.5;
+        var y = (e.clientY - rect.top) / rect.height - 0.5;
+        inner.style.transform = 'perspective(900px) rotateY(' + (x * 24) + 'deg) rotateX(' + (-y * 24) + 'deg)';
+      });
+      card.addEventListener('mouseleave', function () {
+        inner.style.transform = 'perspective(900px) rotateY(0deg) rotateX(0deg)';
+      });
+    });
+  }
+
+  function initComboTilt() {
+    document.querySelectorAll('[data-combo-tilt]').forEach(function (card) {
+      card.addEventListener('mousemove', function (e) {
+        var rect = card.getBoundingClientRect();
+        var x = (e.clientX - rect.left) / rect.width - 0.5;
+        var y = (e.clientY - rect.top) / rect.height - 0.5;
+        card.style.transform = 'perspective(1100px) rotateY(' + (x * 22) + 'deg) rotateX(' + (-y * 22) + 'deg) translateY(-34px) translateZ(28px)';
+      });
+      card.addEventListener('mouseleave', function () {
+        card.style.transform = 'perspective(1100px) rotateY(0) rotateX(0) translateY(0) translateZ(0)';
+      });
+    });
+  }
+
+  function initCursorTrail() {
+    const canvas = document.getElementById('cursor-trail-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const drops = [];
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    document.addEventListener('mousemove', function (e) {
+      if (Math.random() > 0.35) return;
+      drops.push({ x: e.clientX, y: e.clientY, r: 3 + Math.random() * 4, a: 0.6, life: 1 });
+    });
+    function loop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = drops.length - 1; i >= 0; i--) {
+        const d = drops[i];
+        d.y += 1.2;
+        d.a *= 0.96;
+        d.life -= 0.02;
+        ctx.fillStyle = 'rgba(139, 0, 0, ' + d.a + ')';
+        ctx.beginPath();
+        ctx.ellipse(d.x, d.y, d.r * 0.4, d.r, 0, 0, Math.PI * 2);
+        ctx.fill();
+        if (d.life <= 0) drops.splice(i, 1);
+      }
+      requestAnimationFrame(loop);
+    }
+    loop();
+  }
+
+  function initScrollReveal() {
+    const obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) {
+          en.target.classList.add('visible');
+          en.target.classList.add('blood-drip-anim');
+        }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(function (el) { obs.observe(el); });
+  }
+
+  function scheduleLightning() {
+    function flash() {
+      const f = document.getElementById('lightning-flash');
+      if (!f) return;
+      f.classList.add('on');
+      setTimeout(function () { f.classList.remove('on'); }, 100);
+      setTimeout(scheduleLightning, 30000 + Math.random() * 30000);
+    }
+    setTimeout(flash, 30000 + Math.random() * 30000);
+  }
+
+  function initBooking() {
+    const sel = document.getElementById('bk-time');
+    if (sel) {
+      sel.innerHTML = TIME_SLOTS.map(function (s) {
+        return '<option value="' + s.v + '">' + s.v + ' — ' + s.label + '</option>';
+      }).join('');
+    }
+    const d = document.getElementById('bk-date');
+    if (d) {
+      const t = new Date();
+      t.setDate(t.getDate());
+      d.min = t.toISOString().slice(0, 10);
+      d.addEventListener('change', renderFloorMap);
+    }
+    if (sel) sel.addEventListener('change', renderFloorMap);
+    const form = document.getElementById('booking-form');
+    if (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const date = document.getElementById('bk-date').value;
+        const time = document.getElementById('bk-time').value;
+        const tableId = parseInt(document.getElementById('bk-table-id').value, 10);
+        if (!date || !time || !tableId) {
+          toast('Choose date, time, and a table.');
+          return;
+        }
+        if (isTableBooked(date, time, tableId)) {
+          toast('That table is taken.');
+          return;
+        }
+        const t = TABLES.find(function (x) { return x.id === tableId; });
+        const booking = {
+          id: uid('BK'),
+          name: document.getElementById('bk-name').value.trim(),
+          email: document.getElementById('bk-email').value.trim(),
+          phone: document.getElementById('bk-phone').value.trim(),
+          date: date,
+          time: time,
+          tableId: tableId,
+          tableName: t ? t.name : 'Table ' + tableId,
+          guests: parseInt(document.getElementById('bk-guests').value, 10),
+          request: document.getElementById('bk-req').value.trim()
+        };
+        state.tableBookings[date + '_' + time + '_' + tableId] = true;
+        state.bookings.push(booking);
+        saveState();
+        toast('Table ' + tableId + ' has been reserved. The darkness awaits you.');
+        form.reset();
+        document.getElementById('bk-table-id').value = '';
+        document.getElementById('bk-table-label').textContent = 'No table selected.';
+        renderFloorMap();
+      });
+    }
+  }
+
+  function initAdminForms() {
+    const ff = document.getElementById('form-add-food');
+    if (ff) {
+      ff.querySelector('[name="image"]').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+          foodImg = ev.target.result;
+          const prev = document.getElementById('preview-food');
+          if (prev) { prev.src = foodImg; prev.classList.remove('hidden'); }
+        };
+        reader.readAsDataURL(file);
+      });
+      ff.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (!foodImg) { toast('Upload an image.'); return; }
+        const fd = new FormData(ff);
+        state.foods.push({
+          id: uid('F'),
+          name: fd.get('name'),
+          category: fd.get('category'),
+          price: parseFloat(fd.get('price')),
+          desc: fd.get('desc') || '',
+          badge: fd.get('badge') || '',
+          image: foodImg
+        });
+        foodImg = null;
+        ff.reset();
+        const prev = document.getElementById('preview-food');
+        if (prev) { prev.classList.add('hidden'); prev.removeAttribute('src'); }
+        saveState();
+        renderShop();
+        renderAdmin();
+        toast('Dish bound to the grimoire.');
+      });
+    }
+    const cf = document.getElementById('form-add-combo');
+    if (cf) {
+      cf.querySelector('[name="image"]').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+          comboImg = ev.target.result;
+          const prev = document.getElementById('preview-combo');
+          if (prev) { prev.src = comboImg; prev.classList.remove('hidden'); }
+        };
+        reader.readAsDataURL(file);
+      });
+      cf.addEventListener('submit', function (e) {
+        e.preventDefault();
+        addCombo(cf);
+      });
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.body.classList.add('shake');
+    setTimeout(function () { document.body.classList.remove('shake'); }, 750);
+    loadState();
+    switchMode(state.currentMode);
+
+    setTimeout(function () {
+      var ls = document.getElementById('load-screen');
+      if (ls) ls.classList.add('hidden');
+    }, 2000);
+
+    renderShopFilters();
+    renderShop();
+    renderCombos();
+    renderCart();
+    initBooking();
+    initTilt();
+    initCursorTrail();
+    initScrollReveal();
+    scheduleLightning();
+    initAdminForms();
+
+    document.querySelectorAll('[data-nav]').forEach(function (el) {
+      el.addEventListener('click', function (e) {
+        const p = el.getAttribute('data-nav');
+        if (p === 'cart' || p === 'home' || p === 'shop' || p === 'combos' || p === 'booking' || p === 'about' || p === 'admin-login' || p === 'admin') {
+          e.preventDefault();
+          navigate(p);
+        }
+      });
+    });
+
+    document.getElementById('open-cart').addEventListener('click', function (e) { e.preventDefault(); navigate('cart'); });
+    document.getElementById('close-cart').addEventListener('click', function () {
+      document.getElementById('cartSidebar').classList.remove('open');
+      document.getElementById('cart-backdrop').classList.add('hidden');
+    });
+    document.getElementById('cart-backdrop').addEventListener('click', function () {
+      document.getElementById('cartSidebar').classList.remove('open');
+      document.getElementById('cart-backdrop').classList.add('hidden');
+    });
+
+    document.getElementById('btn-place-order').addEventListener('click', function () {
+      if (state.cart.length === 0) { toast('Your cart is empty.'); return; }
+      let t = 0;
+      state.cart.forEach(function (l) { t += l.price * l.qty; });
+      document.getElementById('order-grand').textContent = formatRs(t);
+      document.getElementById('order-summary').innerHTML = state.cart.map(function (l) {
+        return '<div>' + escapeHtml(l.name) + ' × ' + l.qty + ' — ' + formatRs(l.price * l.qty) + '</div>';
+      }).join('');
+      document.getElementById('order-modal').classList.remove('hidden');
+    });
+    document.getElementById('close-order').addEventListener('click', function () {
+      document.getElementById('order-modal').classList.add('hidden');
+    });
+    document.getElementById('order-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      placeOrder();
+    });
+    document.querySelectorAll('input[name="pay"]').forEach(function (el) {
+      el.addEventListener('change', function () {
+        if (el.checked) state.selectedPayment = el.value;
+      });
+    });
+    document.getElementById('thank-close').addEventListener('click', function () {
+      document.getElementById('thankYou').classList.add('hidden');
+      navigate('home');
+    });
+
+    document.querySelectorAll('.mode-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        switchMode(btn.getAttribute('data-mode'));
+      });
+    });
+
+    document.getElementById('admin-login-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const u = document.getElementById('adm-user').value;
+      const p = document.getElementById('adm-pass').value;
+      const err = document.getElementById('admin-login-err');
+      if (u === 'yogesh2006' && p === '12345') {
+        err.classList.add('hidden');
+        sessionStorage.setItem('mortis_admin', '1');
+        navigate('admin');
+      } else {
+        err.classList.remove('hidden');
+      }
+    });
+    document.getElementById('admin-logout').addEventListener('click', function () {
+      sessionStorage.removeItem('mortis_admin');
+      navigate('admin-login');
+    });
+
+    document.querySelectorAll('.tab-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const tab = btn.getAttribute('data-tab');
+        document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.toggle('active', b === btn); });
+        document.querySelectorAll('.tab-panel').forEach(function (p) {
+          p.classList.toggle('active', p.id === 'tab-' + tab);
+        });
+      });
+    });
+
+    const audio = document.getElementById('ambient-audio');
+    const soundBtn = document.getElementById('btn-sound');
+    let soundOn = false;
+    soundBtn.addEventListener('click', function () {
+      soundOn = !soundOn;
+      if (soundOn) {
+        audio.play().catch(function () {});
+        soundBtn.textContent = '🔇';
+      } else {
+        audio.pause();
+        soundBtn.textContent = '🔊';
+      }
+    });
+  });
+
+})();
+  </script>
+</body>
+</html>
+
